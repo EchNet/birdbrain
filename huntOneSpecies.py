@@ -11,13 +11,17 @@ sightings = api.get(
         "lng": -81.223333,
         "dist": 22,
         "maxResults": 5000,
-        "back": 7,  # days
+        "back": 4,  # days
         "detail": "simple"
     })
 
-species = {}
+count = 0
 for sighting in sightings:
-  species[sighting['comName'].lower()] = sighting
-
-for sighting in species.values():
-  print(sighting["comName"], sighting["obsDt"], sighting["locName"])
+  if "roseate" in sighting["comName"].lower():
+    count += 1
+    print(sighting["comName"])
+    print(sighting["howMany"])
+    print(sighting["locName"])
+    print(sighting["obsDt"])
+    print("-------")
+print("TOTAL", count)

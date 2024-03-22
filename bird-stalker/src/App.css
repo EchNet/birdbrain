@@ -1,6 +1,35 @@
-.App {
-}
-
 div.welcome {
   text-align: center;
+}
+
+div.welcome-banner {
+  padding-bottom: 4vh;
+}
+
+span.welcome-banner-text {
+  font-size: 10vw;
+  font-weight: 800;
+  color: #d6a9ca;
+}
+
+div.welcome-text {
+  background-color: #ddfdfe;
+  padding: 3vh 2vw;
+  font-size: 1.1em;
+}
+
+form {
+  padding-top: 2em;
+  padding-bottom: 4em;
+  background-color: #feffa9;
+}
+
+form p {
+  max-width: 500px;
+  margin: 2em auto;
+}
+
+form div.welcome-api-key {
+  padding: 2em;
+  background-color: white;
 }

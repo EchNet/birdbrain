@@ -1,4 +1,4 @@
-div.welcome {
+div.main {
   text-align: center;
 }
 
@@ -18,10 +18,33 @@ div.welcome-text {
   font-size: 1.1em;
 }
 
+div.location-banner {
+  padding: 4vh;
+  background-color: #ddfdfe;
+}
+
+span.location-banner-text {
+  font-size: 6vw;
+  font-weight: 600;
+  color: #8f3996;
+}
+
+div.location-pick-choices {
+  padding: 6vh 3vw 5vh;
+}
+
+div.location-pick-choices button {
+  font-size: 1.2em;
+  margin: 0.75em;
+}
+
+.yellow {
+  background-color: #feffc4;
+}
+
 form {
   padding-top: 2em;
   padding-bottom: 4em;
-  background-color: #feffa9;
 }
 
 form p {

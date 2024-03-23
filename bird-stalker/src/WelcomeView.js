@@ -34,7 +34,7 @@ function WelcomeView() {
   };
 
   return (
-    <div className="welcome">
+    <div className="main">
       <div className="welcome-banner">
         <span className="welcome-banner-text">Welcome to Bird Stalker</span>
       </div>
@@ -42,7 +42,7 @@ function WelcomeView() {
         Track down bird species in your area, based on sightings reported 
         to <a href="https://ebird.org"><b>eBird.org</b></a>.
       </div>
-      <form onSubmit={onFormSubmit}>
+      <form className="yellow" onSubmit={onFormSubmit}>
         <p>
           To use Bird Stalker, you must have an <a href="https://ebird.org"><b>eBird.org</b></a> account,
           and you must provide Bird Stalker with an eBird API key. 

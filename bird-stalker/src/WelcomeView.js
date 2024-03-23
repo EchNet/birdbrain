@@ -35,19 +35,20 @@ function WelcomeView() {
 
   return (
     <div className="main">
-      <div className="welcome-banner">
-        <span className="welcome-banner-text">Welcome to Bird Stalker</span>
-      </div>
-      <div className="welcome-text">
+      <h1>Welcome to Bird Stalker</h1>
+      <h3>
         Track down bird species in your area, based on sightings reported 
         to <a href="https://ebird.org"><b>eBird.org</b></a>.
-      </div>
-      <form className="yellow" onSubmit={onFormSubmit}>
+      </h3>
+      <form onSubmit={onFormSubmit}>
         <p>
           To use Bird Stalker, you must have an <a href="https://ebird.org"><b>eBird.org</b></a> account,
           and you must provide Bird Stalker with an eBird API key. 
         </p>
-        <FormControl className="welcome-api-key">
+        <p>
+          <a href={API_KEYGEN_URL} target="_new">Click here to get your API key.</a>
+        </p>
+        <FormControl>
           <TextField 
               label="Enter your API key here"
               error={inputApiKeySubmitted && !inputApiKeyIsValid}
@@ -57,11 +58,8 @@ function WelcomeView() {
               ></TextField>
           <Button type="submit" variant="contained" disabled={!inputApiKey}>Submit</Button>
         </FormControl>
-        <p>
-          <a href={API_KEYGEN_URL} target="_new">Click here to get your API key.</a>
-        </p>
       </form>
-      <div className="welcome-media">
+      <div>
         <img src="/img/birdstalker.png" width="100%"/>
       </div>
     </div>

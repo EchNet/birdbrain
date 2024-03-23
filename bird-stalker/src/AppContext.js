@@ -14,12 +14,10 @@ export const AppProvider = ({ children }) => {
   const [ maxDistanceMiles, setMaxDistanceMiles ] = useState(DEFAULT_MAX_DISTANCE_MILES);
 
   useEffect(() => {
-console.log('RESTORE state');
     storageConnector.restoreState()
       .then(savedState => {
         setInitialized(true);
         if (savedState) {
-console.log('saved state', savedState);
           const { apiKey, location, excludedSpecies, maxDistanceMiles } = savedState;
           setApiKey(apiKey);
           setLocation(location);
@@ -31,7 +29,6 @@ console.log('saved state', savedState);
 
   useEffect(() => {
     if (initialized) {
-console.log('saveState');
       storageConnector.saveState({
         apiKey, location, excludedSpecies, maxDistanceMiles
       });

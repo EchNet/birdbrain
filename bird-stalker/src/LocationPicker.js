@@ -12,7 +12,6 @@ function showLocation(location) {
   return `latitude ${location.latitude}, longitude ${location.longitude}`;
 }
 
-
 function LocationPicker() {
   const { location, setLocation } = useContext(AppContext);
 
@@ -37,14 +36,12 @@ function LocationPicker() {
               var description = null;
               googleMapsConnector.reverseGeocode(latitude, longitude)
                 .then((geocoding) => {
-                  console.log('geocoding', geocoding);
                   if (geocoding) {
                     description = geocoding.formatted_address;
                   }
                 })
                 .catch((error) => {
                   console.log('geocode error:', error);
-                  // Ignore.
                 })
                 .finally(() => {
                   setChosenLocation({ latitude, longitude, description });
@@ -65,10 +62,8 @@ function LocationPicker() {
 
   return (
     <div className="main">
-      <div className="location-banner">
-        <span className="location-banner-text">Where do you want to go bird stalking?</span>
-      </div>
-      <div className="location-pick-choices yellow">
+      <h2>Where do you want to go bird stalking?</h2>
+      <div className="flow-menu">
         { pickMode == null && (
             <>
               <Button variant="outlined" onClick={() => setPickMode(GEO_MODE)}>Use my current location</Button>
@@ -86,7 +81,7 @@ function LocationPicker() {
         ) }
         { pickMode == GEO_MODE && !waiting && !errorMsg && chosenLocation && (
           <>
-            <div>Got you at {showLocation(chosenLocation)}</div>
+            <p>Got you at {showLocation(chosenLocation)}</p>
             <div>
               <Button onClick={onClickAccept}>Looks good to me.</Button>
               <Button onClick={() => setPickMode(null)}>Try a different way.</Button>

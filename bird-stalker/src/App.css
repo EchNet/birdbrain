@@ -2,57 +2,66 @@ div.main {
   text-align: center;
 }
 
-div.welcome-banner {
-  padding-bottom: 4vh;
-}
-
-span.welcome-banner-text {
-  font-size: 10vw;
+h1 {
+  padding: 6vh 2vh 8vh;
+  font-size: 8em;
   font-weight: 800;
+  background-color: white;
   color: #d6a9ca;
+  margin: 0px auto;
 }
 
-div.welcome-text {
-  background-color: #ddfdfe;
-  padding: 3vh 2vw;
-  font-size: 1.1em;
-}
-
-div.location-banner {
+h2 {
   padding: 4vh;
-  background-color: #ddfdfe;
-}
-
-span.location-banner-text {
   font-size: 6vw;
   font-weight: 600;
+  background-color: #ddfdfe;
   color: #8f3996;
+  margin: 0px auto;
 }
 
-div.location-pick-choices {
+h3 {
+  background-color: #ddfdfe;
+  padding: 3vh 2vw;
+  font-size: 2em;
+  margin: 0px auto;
+}
+
+p {
+  font-size: 1.3em;
+  max-width: 500px;
+  margin: 2em auto;
+}
+
+form p {
+  background-color: #feffc4;
+}
+
+div.flow-menu {
   padding: 6vh 3vw 5vh;
 }
 
-div.location-pick-choices button {
-  font-size: 1.2em;
-  margin: 0.75em;
+div.stack-menu {
+  padding: 3vh 3vw 3vh;
+  display: flex;
+  flex-direction: column;
+  max-width: 800px;
+  margin: auto;
 }
 
-.yellow {
-  background-color: #feffc4;
+div.flow-menu button, div.stack-menu button {
+  font-size: 1.2em;
+  margin: 0.75em;
 }
 
 form {
   padding-top: 2em;
   padding-bottom: 4em;
+  font-size: 1.1em;
+  background-color: #feffc4;
 }
 
-form p {
-  max-width: 500px;
-  margin: 2em auto;
-}
-
-form div.welcome-api-key {
-  padding: 2em;
+form > div {
+  padding: 3em !important;
   background-color: white;
 }

@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useCallback, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import AppContext from './AppContext';
@@ -16,9 +16,9 @@ function LocationPicker() {
   const { location, setLocation } = useContext(AppContext);
 
   const GEO_MODE = "geo"
-  const MAP_MODE = "map";
-  const ADDRESS_MODE = "address";
-  const REGION_MODE = "region"
+  //const MAP_MODE = "map";
+  //const ADDRESS_MODE = "address";
+  //const REGION_MODE = "region"
 
   const [ pickMode, setPickMode ] = useState(null);
   const [ waiting, setWaiting ] = useState(false);
@@ -88,9 +88,6 @@ function LocationPicker() {
             </div>
           </>
         ) }
-      </div>
-      <div className="welcome-media">
-        <img src="/img/birdstalker2.png" width="100%"/>
       </div>
     </div>
   );

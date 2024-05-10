@@ -5,6 +5,7 @@ import AppContext from './AppContext';
 import WelcomeView from './WelcomeView';
 import LocationPicker from './LocationPicker';
 import BirdList from './BirdList';
+import BirdSpeciesView from './BirdSpeciesView';
 
 
 function ActionMenu() {
@@ -22,9 +23,6 @@ function ActionMenu() {
         <Button variant="outlined">Upload my life list</Button>
         <Button variant="outlined" onClick={() => setLocation(null)}>Start Stalking Somewhere Else</Button>
         <Button variant="outlined">Update API Key</Button>
-      </div>
-      <div>
-        <img src="/img/birdstalker.png" width="100%"/>
       </div>
     </div>
   );
@@ -48,7 +46,8 @@ function MainComponent() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/birds" element={<BirdList/>} />
+        <Route path="/birds" exact element={<BirdList/>} />
+        <Route path="/bird/:speciesCode" exact element={<BirdSpeciesView/>} />
         <Route path="*" element={<ActionMenu/>} />
       </Routes>
     </BrowserRouter>

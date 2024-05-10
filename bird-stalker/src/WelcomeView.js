@@ -1,11 +1,11 @@
-import React, { useContext, useCallback, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import Button from '@mui/material/Button';
 import FormControl from '@mui/material/FormControl';
 import TextField from '@mui/material/TextField';
 import AppContext from './AppContext';
 
 function WelcomeView() {
-  const { apiKey, setApiKey } = useContext(AppContext);
+  const { setApiKey } = useContext(AppContext);
 
   const API_KEYGEN_URL = "https://ebird.org/api/keygen";
 
@@ -34,7 +34,7 @@ function WelcomeView() {
   };
 
   return (
-    <div className="main">
+    <div className="welcome">
       <h1>Welcome to Bird Stalker</h1>
       <h3>
         Track down bird species in your area, based on sightings reported 
@@ -59,9 +59,6 @@ function WelcomeView() {
           <Button type="submit" variant="contained" disabled={!inputApiKey}>Submit</Button>
         </FormControl>
       </form>
-      <div>
-        <img src="/img/birdstalker.png" width="100%"/>
-      </div>
     </div>
   );
 }

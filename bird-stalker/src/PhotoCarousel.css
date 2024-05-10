@@ -1,0 +1,60 @@
+.crossfade-container {
+  position: relative;
+  width: 100%;
+}
+
+.crossfade-container img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  object-fit: cover;
+}
+
+.crossfade-container img.shown {
+  opacity: 1;
+  visibility: visible;
+}
+
+.crossfade-container.active img.shown {
+  animation: fade-in 4s forwards;
+}
+
+.crossfade-container img.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.crossfade-container.active img.hidden {
+  animation: fade-out 4s forwards;
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    visibility: hidden;
+  }
+  1% {
+    opacity: 0;
+    visibility: visible;
+  }
+  100% {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+@keyframes fade-out {
+  0% {
+    opacity: 1;
+    visibility: visible;
+  }
+  99% {
+    opacity: 0;
+    visibility: visible;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}

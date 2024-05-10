@@ -38,8 +38,15 @@ function EbirdApiConnector(config) {
     return apiPromise(url);
   }
 
+  function getRecentNearbyObservationsOfSpecies(speciesCode, latitude, longitude) {
+    const path = `data/obs/geo/recent/${speciesCode}`;
+    const url = `${BASE_URL}${path}?lat=${latitude}&lng=${longitude}`;
+    return apiPromise(url);
+  }
+
   return { 
     getRecentNearbyObservations,
+    getRecentNearbyObservationsOfSpecies,
   }
 }
 

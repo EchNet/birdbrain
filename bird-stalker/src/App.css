@@ -65,3 +65,9 @@ form > div {
   padding: 3em !important;
   background-color: white;
 }
+
+table {
+  border: none;
+  max-width: 600px;
+  margin: auto;
+}

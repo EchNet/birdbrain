@@ -41,15 +41,7 @@ div.flow-menu {
   padding: 6vh 3vw 5vh;
 }
 
-div.stack-menu {
-  padding: 3vh 3vw 3vh;
-  display: flex;
-  flex-direction: column;
-  max-width: 800px;
-  margin: auto;
-}
-
-div.flow-menu button, div.stack-menu button {
+div.flow-menu button {
   font-size: 1.2em;
   margin: 0.75em;
 }
@@ -70,4 +62,23 @@ table {
   border: none;
   max-width: 600px;
   margin: auto;
+}
+
+.header-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 6px;
+  border-bottom: solid 3px #b7b7b7;
+}
+
+.action-menu {
+  padding: 0.75em;
+  border-bottom: solid 3px #b7b7b7;
+  background-color: #f5f8e8;
+}
+
+.action-menu button {
+  font-size: 1.1em;
+  margin: 0.5em;
 }

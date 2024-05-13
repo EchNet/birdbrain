@@ -44,7 +44,6 @@ function BirdListItem(props) {
 function BirdList() {
   const { apiKey, location, maxDistanceMiles } = useContext(AppContext);
   const navigate = useNavigate();
-
   const [ waiting, setWaiting ] = useState(true);
   const [ birds, setBirds ] = useState([]);
 
@@ -55,7 +54,7 @@ function BirdList() {
       .then((results) => setBirds(sortResults(results)))
       .catch((error) => console.log(error))
       .finally(() => setWaiting(false));
-  }, []);
+  }, [apiKey, maxDistanceMiles, location]);
 
   return (
     <div className="main">

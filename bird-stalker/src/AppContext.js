@@ -32,6 +32,7 @@ export const AppProvider = ({ children }) => {
   const [ location, setLocation ] = useState(null);
   const [ excludedSpecies, setExcludedSpecies ] = useState([]);
   const [ maxDistanceMiles, setMaxDistanceMiles ] = useState(DEFAULT_MAX_DISTANCE_MILES);
+  const [ menuOpen, setMenuOpen ] = useState(false);
 
   useEffect(() => {
     storageConnector.restoreState()
@@ -55,7 +56,6 @@ export const AppProvider = ({ children }) => {
     }
   }, [ initialized, apiKey, location, excludedSpecies, maxDistanceMiles ]);
 
-
   const addExcludedSpecies = (speciesCode) => {
     if (!excludedSpecies[speciesCode]) {
       const newExcludedSpecies = Object.assign({}, excludedSpecies, { [speciesCode]:1 });
@@ -77,7 +77,8 @@ export const AppProvider = ({ children }) => {
                  apiKey, setApiKey,
                  location, setLocation,
                  excludedSpecies, addExcludedSpecies, removeExcludedSpecies,
-                 maxDistanceMiles, setMaxDistanceMiles }}>
+                 maxDistanceMiles, setMaxDistanceMiles,
+                 menuOpen, setMenuOpen }}>
       {children}
     </AppContext.Provider>
   );

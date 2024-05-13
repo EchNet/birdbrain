@@ -1,57 +1,34 @@
 import React, { useContext } from 'react';
-import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
-import Button from '@mui/material/Button';
+import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom';
+import AboutView from './AboutView';
 import AppContext from './AppContext';
-import WelcomeView from './WelcomeView';
+import ApiKeyView from './ApiKeyView';
+import Header from './Header';
 import LocationPicker from './LocationPicker';
 import BirdList from './BirdList';
 import BirdSpeciesView from './BirdSpeciesView';
 
-
-function ActionMenu() {
-  const { setLocation } = useContext(AppContext);
-  const navigate = useNavigate();
-
-  return (
-    <div className="main">
-      <h2>
-        What's next, bird stalker?
-      </h2>
-      <div className="stack-menu">
-        <Button variant="outlined">Suggest a quest</Button>
-        <Button variant="outlined" onClick={() => navigate("/birds")}>See the list of local birds</Button>
-        <Button variant="outlined">Upload my life list</Button>
-        <Button variant="outlined" onClick={() => setLocation(null)}>Start Stalking Somewhere Else</Button>
-        <Button variant="outlined">Update API Key</Button>
-      </div>
-    </div>
-  );
-}
-
 function MainComponent() {
   const { initialized, apiKey, location } = useContext(AppContext);
 
-  if (!initialized) {
-    return null;
-  }
-
-  if (apiKey == null) {
-    return <WelcomeView />;
-  }
-
-  if (location == null) {
-    return <LocationPicker />;
-  }
-
-  return (
+  return initialized ? (
     <BrowserRouter>
+      <Header/>
       <Routes>
-        <Route path="/birds" exact element={<BirdList/>} />
-        <Route path="/bird/:speciesCode" exact element={<BirdSpeciesView/>} />
-        <Route path="*" element={<ActionMenu/>} />
+        <Route path="/apikey" exact element={<ApiKeyView/>} />;
+        <Route path="/location" exact element={<LocationPicker/>} />;
+        <Route path="/birds" exact render={() => (
+          !apiKey ? <Navigate to="/apiKey"/> :
+          !location ? <Navigate to="/location"/> :
+          <BirdList/>)} />
+        <Route path="/bird/:speciesCode" exact render={() => (
+          !apiKey ? <Navigate to="/apiKey"/> :
+          !location ? <Navigate to="/location"/> :
+          <BirdSpeciesView/>)} />
+        <Route path="*" element={<AboutView/>} />
       </Routes>
     </BrowserRouter>
-  );
+  ) : null;
 }
 
 export default MainComponent;

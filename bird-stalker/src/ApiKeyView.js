@@ -4,7 +4,7 @@ import FormControl from '@mui/material/FormControl';
 import TextField from '@mui/material/TextField';
 import AppContext from './AppContext';
 
-function WelcomeView() {
+function ApiKeyView() {
   const { setApiKey } = useContext(AppContext);
 
   const API_KEYGEN_URL = "https://ebird.org/api/keygen";
@@ -63,4 +63,4 @@ function WelcomeView() {
   );
 }
 
-export default WelcomeView;
+export default ApiKeyView;

@@ -26,11 +26,11 @@ function LocationPicker() {
   const [ errorMsg, setErrorMsg ] = useState(null);
 
   useEffect(() => {
-    if (location == null && pickMode == GEO_MODE) {
+    if (!location && pickMode === GEO_MODE) {
       setWaiting(true);
       geoConnector.getCurrentPosition()
         .then(position => {
-          if (pickMode == GEO_MODE) {
+          if (pickMode === GEO_MODE) {
             const { latitude, longitude } = position.coords;
             if (latitude != null && longitude != null) {
               var description = null;
@@ -50,11 +50,11 @@ function LocationPicker() {
           }
         })
         .catch(error => {
-          if (pickMode == GEO_MODE) {
+          if (pickMode === GEO_MODE) {
             setErrorMsg(error.message);
           }
         })
-        .finally(() => pickMode == GEO_MODE && setWaiting(false));
+        .finally(() => pickMode === GEO_MODE && setWaiting(false));
     }
   }, [ location, pickMode ]);
 
@@ -64,7 +64,7 @@ function LocationPicker() {
     <div className="main">
       <h2>Where do you want to go bird stalking?</h2>
       <div className="flow-menu">
-        { pickMode == null && (
+        { !pickMode && (
             <>
               <Button variant="outlined" onClick={() => setPickMode(GEO_MODE)}>Use my current location</Button>
               <Button variant="outlined">Point out the location on a map</Button>
@@ -79,7 +79,7 @@ function LocationPicker() {
             <div><Button onClick={() => setPickMode(null)}>Try a different way.</Button></div>
           </>
         ) }
-        { pickMode == GEO_MODE && !waiting && !errorMsg && chosenLocation && (
+        { pickMode === GEO_MODE && !waiting && !errorMsg && chosenLocation && (
           <>
             <p>Got you at {showLocation(chosenLocation)}</p>
             <div>

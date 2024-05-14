@@ -6,21 +6,26 @@ import AppContext from './AppContext';
 import './HamburgerButton.css';
 
 
-function ActionMenu(props) {
-  const { apiKey, location } = useContext(AppContext);
+function ActionMenu({ minimized }) {
+  const { apiKey, location, setMenuOpen } = useContext(AppContext);
   const navigate = useNavigate();
 
   const birdListDisabled = !apiKey || !location;
   const locationPrompt = location ? "Start stalking somewhere else" : "Choose a location to stalk";
   const apiKeyPrompt = apiKey ? "Update API Key" : "Connect to ebird.org API";
 
+  function goto(path) {
+    setMenuOpen(false);
+    navigate(path);
+  }
+
   return (
-    <div className="action-menu">
+    <div className={`action-menu${minimized ? " minimized" : ""}`}>
       <Button variant="outlined" disabled={birdListDisabled}
           onClick={() => navigate("/birds")}>See the list of local birds</Button>
-      <Button variant="outlined" onClick={() => navigate("/location")}>{locationPrompt}</Button>
-      <Button variant="outlined" onClick={() => navigate("/apikey")}>Update API Key</Button>
-      <Button variant="outlined" onClick={() => navigate("/about")}>About Bird Stalker</Button>
+      <Button variant="outlined" onClick={() => goto("/location")}>{locationPrompt}</Button>
+      <Button variant="outlined" onClick={() => goto("/apikey")}>{apiKeyPrompt}</Button>
+      <Button variant="outlined" onClick={() => goto("/about")}>About Bird Stalker</Button>
     </div>
   )
 }
@@ -36,7 +41,7 @@ function Header() {
   return (
     <>
       <div className="header-strip">
-        <img src="/img/striplogo.png" height="48" alt="Bird Stalker"/>
+        <img className="striplogo" src="/img/striplogo.png" alt="Bird Stalker"/>
 
         <div className={`hamburger-button${ menuOpen ? " close" : ""}`} onClick={handleHamburgerClick}>
           <div className="btn-line" />
@@ -44,7 +49,7 @@ function Header() {
           <div className="btn-line" />
         </div>
       </div>
-      { menuOpen ? <ActionMenu/> : null }
+      <ActionMenu minimized={!menuOpen}/>
     </>
   );
 }

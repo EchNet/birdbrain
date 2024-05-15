@@ -9,23 +9,31 @@ import BirdList from './BirdList';
 import BirdSpeciesView from './BirdSpeciesView';
 
 function MainComponent() {
-  const { initialized, apiKey, location } = useContext(AppContext);
+  const { apiKey, initialized, location } = useContext(AppContext);
+
+  function requisitePath() {
+    return !apiKey ? "/apiKey" : (!location ? "/location" : null);
+  }
+
+  function navTo(navPath) {
+    return <Navigate to={navPath} />;
+  }
+
+  function navToRequisite() {
+    const navPath = requisitePath();
+    return navPath ? <Navigate to={navPath} /> : null;
+  }
 
   return initialized ? (
     <BrowserRouter>
       <Header/>
       <Routes>
-        <Route path="/apikey" exact element={<ApiKeyView/>} />;
-        <Route path="/location" exact element={<LocationPicker/>} />;
-        <Route path="/birds" exact render={() => (
-          !apiKey ? <Navigate to="/apiKey"/> :
-          !location ? <Navigate to="/location"/> :
-          <BirdList/>)} />
-        <Route path="/bird/:speciesCode" exact render={() => (
-          !apiKey ? <Navigate to="/apiKey"/> :
-          !location ? <Navigate to="/location"/> :
-          <BirdSpeciesView/>)} />
-        <Route path="*" element={<AboutView/>} />
+        <Route path="/about" exact element={<AboutView/>} />
+        <Route path="/apikey" exact element={<ApiKeyView/>} />
+        <Route path="/location" exact element={<LocationPicker/>} />
+        <Route path="/birds" exact element={navToRequisite() || <BirdList/>} />
+        <Route path="/bird/:speciesCode" exact element={navToRequisite() || <BirdSpeciesView/>} />
+        <Route path="*" element={navTo(requisitePath() || "/birds")} />
       </Routes>
     </BrowserRouter>
   ) : null;

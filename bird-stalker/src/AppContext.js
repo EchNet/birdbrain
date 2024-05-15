@@ -73,7 +73,8 @@ export const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider
-        value={{ initialized,
+        value={{ 
+                 initialized,
                  apiKey, setApiKey,
                  location, setLocation,
                  excludedSpecies, addExcludedSpecies, removeExcludedSpecies,

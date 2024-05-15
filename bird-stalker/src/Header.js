@@ -11,7 +11,7 @@ function ActionMenu({ minimized }) {
   const navigate = useNavigate();
 
   const birdListDisabled = !apiKey || !location;
-  const locationPrompt = location ? "Start stalking somewhere else" : "Choose a location to stalk";
+  const locationPrompt = location ? "Start stalking somewhere else" : "Choose where to stalk";
   const apiKeyPrompt = apiKey ? "Update API Key" : "Connect to ebird.org API";
 
   function goto(path) {

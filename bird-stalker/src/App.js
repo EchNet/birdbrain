@@ -15,8 +15,6 @@ function App() {
       <AppProvider>
         <div className="main">
           <MainComponent/>
-        </div>
-        <div className="carousel">
           <PhotoCarousel sources={[ "/img/birdstalker.png", "/img/birdstalker2.png" ]} />
         </div>
       </AppProvider>

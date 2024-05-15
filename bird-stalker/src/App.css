@@ -1,62 +1,56 @@
-h1 {
-  padding: 6vh 2vh 8vh;
-  font-size: 8em;
-  font-weight: 800;
+body {
+  background-color: #cccccc !important;
+  font-size: 2.2vw;
+}
+
+@media screen and (min-width: 1200px) {
+  font-size: 14px;
+}
+
+div.main {
+  margin: 0 auto;
+  max-width: 1024px;
   background-color: white;
-  color: #d6a9ca;
-  margin: 0px auto;
+  padding-bottom: 20px;
 }
 
-h2 {
-  padding: 4vh;
-  font-size: 6vw;
+h1 {
+  padding: 2vh 1vh;
+  font-size: 3em;
   font-weight: 600;
-  background-color: #ddfdfe;
-  color: #8f3996;
-  margin: 0px auto;
-}
-
-h3 {
-  background-color: #e6feff;
-  padding: 2vh 1vw;
-  font-size: 1.5em;
-  margin: 0px auto;
+  color: #d6a9ca;
   text-align: center;
 }
 
-p {
-  font-size: 1em;
-  max-width: 500px;
+section h2 {
+  font-size: 2em;
+  font-weight: 600;
+  color: #86caa9;
+  text-align: center;
+}
+
+section h3 {
+  background-color: #edfafe;
+  font-size: 1.5em;
+  margin: 0 auto;
+  padding: 0.5em;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+section, p {
+  max-width: 600px;
   margin: 2em auto;
 }
 
-p ul li {
+ul li {
   margin-bottom: 1em;
-}
-
-form p {
-  background-color: #feffc4;
-}
-
-div.flow-menu {
-  padding: 6vh 3vw 5vh;
 }
 
 div.flow-menu button {
   font-size: 1.2em;
   margin: 0.75em;
-}
-
-form {
-  padding-top: 2em;
-  padding-bottom: 4em;
-  font-size: 1.1em;
-  background-color: #feffc4;
-}
-
-form > div {
-  padding: 3em !important;
-  background-color: white;
 }
 
 table {
@@ -69,7 +63,7 @@ table {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 2px 6px;
+  padding: 2px 8px;
   border-bottom: ridge 3px #b7b7b7;
 }
 
@@ -90,18 +84,46 @@ table {
 }
 
 .action-menu {
+  text-align: center;
   max-height: 500px;
   overflow-y: hidden;
   transition: all 0.4s linear;
   padding: 0 0.75em;
-  background-color: #f6faf2;
+  background-color: #fcfdff;
+  border-bottom-width: 3px;
+  border-bottom-style: ridge;
+  border-bottom-color: #b7b7b7;
 }
 
 .action-menu.minimized {
   max-height: 0px;
+  border-bottom-width: 0px;
+  border-bottom-color: rgba(0,0,0,0);
 }
 
 .action-menu button {
   font-size: 1.1em;
   margin: 0.6em;
+}
+
+a[href] {
+  color: #587f99;
+  text-decoration: underline;
+}
+
+a[href]:hover {
+  color: #77aacc;
+  text-decoration: none;
+}
+
+span.logo {
+  font-weight: 600;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.error {
+  color: red;
 }

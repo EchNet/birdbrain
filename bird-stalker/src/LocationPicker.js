@@ -1,24 +1,55 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
 import CircularProgress from '@mui/material/CircularProgress';
 import AppContext from './AppContext';
 import { geoConnector } from './GeoConnector';
-import { googleMapsConnector } from './GoogleMapsConnector';
+import GoogleMapsContext from './GoogleMapsContext';
+import { googleApiConnector } from './GoogleApiConnector';
 
 //
 // Format a location dictionary.
 //
-function showLocation(location) {
+function formatLocation(location) {
   if (location.description) {
     return location.description;
   }
   return `latitude ${location.latitude}, longitude ${location.longitude}`;
 }
 
+function inOrAt(location) {
+  return location.description ? "in" : "at";
+}
+
+
+function locationGoogleToUs(coords) {
+  if (coords) {
+    const { lat: latitude, lng: longitude } = coords;
+    if (latitude != null && longitude != null) {
+      return({ latitude, longitude });
+    }
+  }
+}
+
+
+function locationUsToGoogle(coords) {
+  if (coords) {
+    const { latitude: lat, longitude: lng } = coords;
+    if (lat != null && lng != null) {
+      return({ lat, lng });
+    }
+  }
+}
+
+function locationsEqual(l1, l2){
+  return l1 != null && l2 != null && l1.latitude === l2.latitude && l1.longitude === l2.longitude;
+}
+
+
 function describePosition({ latitude, longitude }) {
   return new Promise((resolve, reject) => {
-    googleMapsConnector.reverseGeocode(latitude, longitude)
+    googleApiConnector.reverseGeocode(latitude, longitude)
       .then((geocoding) => {
         if (geocoding) {
           resolve(geocoding.formatted_address);
@@ -34,26 +65,13 @@ function describePosition({ latitude, longitude }) {
   );
 }
 
-function getCurrentLocation({ doReverseGeocode }) {
+function getCurrentLocation() {
   return new Promise((resolve, reject) => {
     geoConnector.getCurrentPosition()
       .then(position => {
         const { latitude, longitude } = position.coords;
         if (latitude != null && longitude != null) {
-          var description = null;
-          if (doReverseGeocode) {
-            describePosition({ latitude, longitude })
-              .then((desc) => { description = desc; })
-              .catch((error) => {
-                console.error('geocoding error:', error);
-              })
-              .finally(() => {
-                resolve({ latitude, longitude, description });
-              })
-          }
-          else {
-            resolve({ latitude, longitude });
-          }
+          resolve({ latitude, longitude });
         }
         else {
           reject("Unknown location.");
@@ -64,143 +82,169 @@ function getCurrentLocation({ doReverseGeocode }) {
   );
 }
 
-function GeoLocationPicker({ onAccept, onCancel, onError }) {
-  const [ waiting, setWaiting ] = useState(false);
-  const [ foundLocation, setFoundLocation ] = useState(null);
-
-  useEffect(() => {
-    if (!foundLocation) {
-      setWaiting(true);
-      getCurrentLocation({ doReverseGeocode: true })
-        .then(setFoundLocation)
-        .catch(errMsg => onError(errMsg))
-        .finally(() => setWaiting(false));
-    }
-  }, [ foundLocation ]);
-
-  return (
-    <div className="text-center">
-      { waiting ? <CircularProgress/> : null }
-      { foundLocation ? (
-        <>
-          <p style={{ fontSize: "1.1em" }}>Found you at {showLocation(foundLocation)}</p>
-          <div className="flow-menu">
-            <Button variant="outlined" onClick={() => onAccept(foundLocation)}>Looks good to me.</Button>
-            <Button variant="outlined" color="secondary" onClick={onCancel}>Try a different way.</Button>
-          </div>
-        </>
-      ) : null }
-    </div>
-  );
-}
-
-function MapLocationPicker({ onAccept, onCancel, onError }) {
-
-  useEffect(() => {
-    onError("Not implemented");
-  }, []);
-
-  return null;
-}
-
-function AddressLocationPicker({ onAccept, onCancel, onError }) {
-
-  useEffect(() => {
-    onError("Not implemented");
-  }, []);
-
-  return null;
-}
-
-function RegionLocationPicker({ onAccept, onCancel, onError }) {
-
-  useEffect(() => {
-    onError("Not implemented");
-  }, []);
-
-  return null;
-}
-
-function LocationPicker({ onCancel }) {
+function LocationView({ onAccept, onRevert }) {
   const { location, setLocation } = useContext(AppContext);
+  const { loadGoogle } = useContext(GoogleMapsContext);
   const navigate = useNavigate();
+ 
+  const [ picking, setPicking ] = useState(!location);
+  const [ initialized, setInitialized ] = useState(!picking);
+  const [ google, setGoogle ] = useState();
+  const [ googleImported, setGoogleImported ] = useState(false);
+  const [ chosenLocation, setChosenLocation ] = useState(location);
+  const [ ranGeo, setRanGeo ] = useState(location);
+  const [ mapInstance, setMapInstance ] = useState();
+  const [ markerInstance, setMarkerInstance ] = useState();
+  const [ lastPannedLocation, setLastPannedLocation ] = useState(location);
+  const [ autocomplete, setAutocomplete ] = useState();
+  const mapContainer = useRef();
+  const textField = useRef();
 
-  const [ Picker, setPicker ] = useState(null);
-  const [ errorMsg, setErrorMsg ] = useState(null);
+  useEffect(() => {
+    // When initialization is complete, hide the spinner.
+    if (!initialized && chosenLocation && mapInstance && markerInstance && autocomplete) {
+      setInitialized(true);
+    }
+  }, [initialized, mapInstance, markerInstance, chosenLocation, autocomplete]);
+
+  useEffect(() => {
+    // One time only - import Google Maps code.
+    if (!google && !googleImported) {
+      setGoogleImported(true);
+      loadGoogle().then(setGoogle);
+    }
+  }, [google]);
+
+  useEffect(() => {
+    // If there is no location already chosen, obtain one through geodetection.
+    if (!chosenLocation && !ranGeo) {
+      setRanGeo(true);
+      getCurrentLocation().then(setChosenLocation);
+    }
+  }, [ chosenLocation, ranGeo ]);
+
+  useEffect(() => {
+    // Construct the map, once we have its starting position.
+    if (!mapInstance && google && chosenLocation && mapContainer.current) {
+      setMapInstance(new google.maps.Map(mapContainer.current, {
+        center: locationUsToGoogle(chosenLocation), 
+        disableDefaultUI: true,
+        gestureHandling: "greedy",
+        zoomControl: true,
+        zoom: 9,
+        controlSize: 25
+      }));
+      setLastPannedLocation(chosenLocation);
+    }
+  }, [mapInstance, google, chosenLocation, mapContainer]);
+
+  useEffect(() => {
+    // Construct the place marker.
+    if (!markerInstance && mapInstance && google) {
+      setMarkerInstance(new google.maps.Marker({
+        map: mapInstance,
+        icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+        visible: false
+      }));
+    }
+  }, [markerInstance, mapInstance, google]);
+
+  useEffect(() => {
+    // Pan map to chosen location.
+    if (mapInstance && chosenLocation && !locationsEqual(chosenLocation, lastPannedLocation)) {
+      mapInstance.panTo(locationUsToGoogle(chosenLocation))
+      setLastPannedLocation(chosenLocation);
+    }
+  }, [mapInstance, chosenLocation, lastPannedLocation]); 
+
+  useEffect(() => {
+    // Place marker at chosen location.
+    if (markerInstance && chosenLocation) {
+      const googleLocation = locationUsToGoogle(chosenLocation);
+      if (googleLocation) {
+        if (!locationsEqual(chosenLocation, locationGoogleToUs(markerInstance.position))) {
+          markerInstance.setPosition(googleLocation);
+          markerInstance.setVisible(true);
+        }
+      }
+      else {
+        markerInstance.setVisible(false);
+      }
+    }
+  }, [markerInstance, chosenLocation]); 
+
+  useEffect(() => {
+    if (!autocomplete && google && textField.current) {
+
+      const ac = new google.maps.places.Autocomplete(textField.current, {
+        fields: ["address_components", "formatted_address", "geometry", "place_id"]
+        //types: ["street_address", "premise"]
+      });
+      setAutocomplete(ac);
+
+      const acListener = google.maps.event.addListener(ac, "place_changed", function() {
+        var place = ac.getPlace();
+        if (place.place_id) {   // getPlace sometimes returns a void place.
+          pickAutocompletedPlace(place);
+        }
+      });
+
+      /***
+      return () => {
+        google.maps.event.removeListener(acListener);
+        google.maps.event.clearInstanceListeners(ac);
+      };
+      ***/
+    }
+  }, [autocomplete, google, textField]);
+
+  function pickAutocompletedPlace(place) {
+    const { formatted_address: description, geometry: { location: latLng } } = place;
+    setChosenLocation(Object.assign(locationGoogleToUs(latLng), { description }));
+  }
 
   function onAccept(newLocation) {
     setLocation(newLocation);
     navigate("/");
   }
 
-  function onError(errorMsg) {
-    setErrorMsg(errorMsg);
+  function onRevert() {
+    setPicking(false);
+    setChosenLocation(location);
   }
-
-  function onStartOver() {
-    setPicker(null);
-    setErrorMsg(null);
-  }
-
-  return (
-    <>
-      <h2>Where do you want to go bird stalking?</h2>
-      { !Picker && (
-          <>
-            <div className="flow-menu">
-              <Button variant="outlined"
-                onClick={() => setPicker(() => GeoLocationPicker)}>Use my current location</Button>
-              <Button variant="outlined"
-                onClick={() => setPicker(() => MapLocationPicker)}>Point out the location on a map</Button>
-              <Button variant="outlined"
-                onClick={() => setPicker(() => AddressLocationPicker)}>Type in an address</Button>
-              <Button variant="outlined"
-                onClick={() => setPicker(() => RegionLocationPicker)}>Pick a region from a list</Button>
-            </div>
-            { location ? (
-              <div className="flow-menu" style={{ marginTop: "1em" }}>
-                <Button variant="outlined" color="secondary"
-                  onClick={() => onCancel()}>Never mind, I'll stay put</Button>
-              </div>
-            ) : null}
-          </>
-      ) }
-      { Picker && !errorMsg ? (
-        <Picker onAccept={onAccept} onCancel={onStartOver} onError={onError}/>
-      ) : null }
-      { errorMsg ? (
-        <>
-          <p className="text-center error">{errorMsg}</p>
-          <div className="text-center flow-menu">
-            <Button variant="outlined" onClick={onStartOver}>Try a different way.</Button>
-          </div>
-        </>
-      ) : null }
-    </>
-  );
-}
-
-function LocationSummary({ onUpdate }) {
-  const { location } = useContext(AppContext);
-  return (
-    <>
-      <p className="text-center" style={{ fontSize: "2em" }}>{showLocation(location)}</p>
-      <div className="flow-menu text-center">
-        <Button variant="outlined" onClick={onUpdate}>Start stalking somewhere else</Button>
-      </div>
-    </>
-  )
-}
-
-function LocationView() {
-  const { location } = useContext(AppContext);
-  const [ picking, setPicking ] = useState(!location);
 
   return (
     <section>
-      { picking
-          ? <LocationPicker onCancel={() => setPicking(false)}/>
-          : <LocationSummary onUpdate = {() => setPicking(true)}/> }
+      { picking ? (
+        <h2>Pick a new location</h2>
+      ) : (
+        <h2>
+          You're stalking {inOrAt(location)} {formatLocation(location)}
+          {" "}<Button onClick={() => setPicking(true)}>Change</Button>
+        </h2>
+      )}
+      { picking ? (
+        <div className="placeInput">
+          <input ref={textField} placeholder="Start typing a place name..."/>
+        </div>
+      ) : null }
+      <div ref={mapContainer} style={{ height: 300 }}></div>
+      <div>{ initialized ? null : <CircularProgress/> }</div>
+      { picking ? (
+        <div className="flow-menu text-center">
+          { chosenLocation && chosenLocation.latitude != null ? (
+            <Button variant="outlined" onClick={onAccept}>Stalk here.</Button>
+          ) : null }
+          { location ? (
+            <Button variant="outlined" color="secondary" onClick={onRevert}>On second thought...</Button>
+          ) : null }
+        </div>
+      ) : null }
+      { !picking && location ? (
+        <div className="flow-menu text-center">
+          <Button variant="outlined" color="secondary" onClick={() => navigate("/")}>Good. Let's stalk</Button>
+        </div>
+      ) : null }
     </section>
   )
 }

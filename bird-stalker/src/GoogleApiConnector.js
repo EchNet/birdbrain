@@ -15,7 +15,7 @@ function findBestResult(geocoding) {
          findAddressByType(geocoding.results, "postal_code");
 }
 
-export const googleMapsConnector = {
+export const googleApiConnector = {
 
   reverseGeocode: function(latitude, longitude) {
     const url = 

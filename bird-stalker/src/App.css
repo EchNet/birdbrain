@@ -106,6 +106,14 @@ table {
   margin: 0.6em;
 }
 
+.placeInput {
+  margin-bottom: 1px;
+}
+.placeInput input {
+  width: "100%";
+  font-size: 1.1em;
+}
+
 a[href] {
   color: #587f99;
   text-decoration: underline;

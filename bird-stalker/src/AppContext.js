@@ -3,7 +3,7 @@ import { storageConnector } from './StorageConnector';
 
 const AppContext = createContext();
 
-const DEFAULT_MAX_DISTANCE_MILES = 22;
+export const DEFAULT_RADIUS_MILES = 22;
 
 function listToHash(list) {
   const hash = {};
@@ -31,7 +31,7 @@ export const AppProvider = ({ children }) => {
   const [ apiKey, setApiKey ] = useState(null);
   const [ location, setLocation ] = useState(null);
   const [ excludedSpecies, setExcludedSpecies ] = useState([]);
-  const [ maxDistanceMiles, setMaxDistanceMiles ] = useState(DEFAULT_MAX_DISTANCE_MILES);
+  const [ radiusMiles, setRadiusMiles ] = useState(DEFAULT_RADIUS_MILES);
   const [ menuOpen, setMenuOpen ] = useState(false);
 
   useEffect(() => {
@@ -39,22 +39,23 @@ export const AppProvider = ({ children }) => {
       .then(savedState => {
         setInitialized(true);
         if (savedState) {
-          const { apiKey, location, excludedSpecies, maxDistanceMiles } = savedState;
-          setApiKey(apiKey);
-          setLocation(location);
-          setExcludedSpecies(listToHash(excludedSpecies));
-          setMaxDistanceMiles(maxDistanceMiles);
+          const { apiKey, location, excludedSpecies, radiusMiles } = savedState;
+          if (apiKey) setApiKey(apiKey);
+          if (location) setLocation(location);
+          if (excludedSpecies) setExcludedSpecies(listToHash(excludedSpecies));
+          if (radiusMiles) setRadiusMiles(radiusMiles);
         }
       });
   }, []);
 
+
   useEffect(() => {
     if (initialized) {
       storageConnector.saveState({
-        apiKey, location, excludedSpecies: hashToList(excludedSpecies), maxDistanceMiles
+        apiKey, location, excludedSpecies: hashToList(excludedSpecies), radiusMiles
       });
     }
-  }, [ initialized, apiKey, location, excludedSpecies, maxDistanceMiles ]);
+  }, [ initialized, apiKey, location, excludedSpecies, radiusMiles ]);
 
   const addExcludedSpecies = (speciesCode) => {
     if (!excludedSpecies[speciesCode]) {
@@ -78,7 +79,7 @@ export const AppProvider = ({ children }) => {
                  apiKey, setApiKey,
                  location, setLocation,
                  excludedSpecies, addExcludedSpecies, removeExcludedSpecies,
-                 maxDistanceMiles, setMaxDistanceMiles,
+                 radiusMiles, setRadiusMiles,
                  menuOpen, setMenuOpen }}>
       {children}
     </AppContext.Provider>

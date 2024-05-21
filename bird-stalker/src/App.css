@@ -40,7 +40,7 @@ section h3 {
 }
 
 section, p {
-  max-width: 600px;
+  max-width: 700px;
   margin: 2em auto;
 }
 
@@ -107,10 +107,10 @@ table {
 }
 
 .placeInput {
-  margin-bottom: 1px;
+  margin-bottom: 2px;
 }
 .placeInput input {
-  width: "100%";
+  width: 100%;
   font-size: 1.1em;
 }
 

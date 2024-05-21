@@ -2,7 +2,25 @@ import React, { createContext, useEffect, useState } from 'react';
 
 const GoogleMapsContext = createContext();
 
+const API_HOST = "https://maps.googleapis.com";
+const API_PATH = "/maps/api/js";
+const GOOGLE_API_KEY = "uAIzaSyDAlOs1QPSV5FPEE1jY".substring(1) + "-IEcm7TYmQ2ucjU";
+
 var promise;
+
+function getGoogleScriptSrc(googleCallbackName) {
+  const queryPairs = [
+    [ "key", GOOGLE_API_KEY ],
+    [ "loading", "async" ],
+    [ "v", "3.26" ],
+    [ "language", "en" ],
+    [ "libraries", [ "places", "geometry" ].join(",") ],
+    [ "callback", googleCallbackName ]
+  ];
+  const queryParams = queryPairs.map((pair) => `${pair[0]}=${encodeURIComponent(pair[1])}`);
+  const queryStr = queryParams.join("&");
+  return `${API_HOST}/${API_PATH}?${queryStr}`;
+}
 
 export const GoogleMapsProvider = ({ children }) => {
 
@@ -18,12 +36,8 @@ export const GoogleMapsProvider = ({ children }) => {
             resolve(window.google);
           };
           window[googleCallbackName] = googleCallback;
-          const GOOGLE_API_KEY =
-            "uAIzaSyDAlOs1QPSV5FPEE1jY".substring(1) + "-IEcm7TYmQ2ucjU";
-          const googleScriptSrc =
-            `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_API_KEY}&loading=async&language=en&libraries=places,geometry&callback=${googleCallbackName}`;
           const scriptEle = document.createElement("script");
-          scriptEle.src = googleScriptSrc;
+          scriptEle.src = getGoogleScriptSrc(googleCallbackName);
           document.head.appendChild(scriptEle);
         }
       });

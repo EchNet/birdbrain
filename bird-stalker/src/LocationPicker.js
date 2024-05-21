@@ -2,11 +2,14 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
+import Slider from '@mui/material/Slider';
 import CircularProgress from '@mui/material/CircularProgress';
 import AppContext from './AppContext';
 import { geoConnector } from './GeoConnector';
 import GoogleMapsContext from './GoogleMapsContext';
 import { googleApiConnector } from './GoogleApiConnector';
+
+const METERS_IN_A_MILE = 1609.34;
 
 //
 // Format a location dictionary.
@@ -25,8 +28,12 @@ function inOrAt(location) {
 
 function locationGoogleToUs(coords) {
   if (coords) {
-    const { lat: latitude, lng: longitude } = coords;
+    let { lat: latitude, lng: longitude } = coords;
     if (latitude != null && longitude != null) {
+      if (typeof latitude === "function") {
+        latitude = latitude();
+        longitude = longitude();
+      }
       return({ latitude, longitude });
     }
   }
@@ -82,8 +89,37 @@ function getCurrentLocation() {
   );
 }
 
-function LocationView({ onAccept, onRevert }) {
-  const { location, setLocation } = useContext(AppContext);
+
+function AutocompleteTextInput({ google, onChange }) {
+  const [ autocomplete, setAutocomplete ] = useState();
+  const textField = useRef();
+
+  useEffect(() => {
+    if (!autocomplete && google && textField.current) {
+
+      const ac = new google.maps.places.Autocomplete(textField.current, {
+        fields: ["address_components", "formatted_address", "geometry"]
+      });
+      setAutocomplete(ac);
+
+      const acListener = google.maps.event.addListener(ac, "place_changed", () => {
+        pickAutocompletedPlace(ac.getPlace());
+      });
+    }
+  }, [autocomplete, google, textField]);
+
+  function pickAutocompletedPlace(place) {
+    const { formatted_address: description, geometry: { location: latLng } } = place;
+    onChange(Object.assign(locationGoogleToUs(latLng), { description }));
+  }
+  return (
+    <input ref={textField} placeholder="Start typing a place name..."/>
+  )
+}
+
+
+function LocationPicker({ onAccept, onRevert }) {
+  const { location, setLocation, radiusMiles, setRadiusMiles } = useContext(AppContext);
   const { loadGoogle } = useContext(GoogleMapsContext);
   const navigate = useNavigate();
  
@@ -94,18 +130,16 @@ function LocationView({ onAccept, onRevert }) {
   const [ chosenLocation, setChosenLocation ] = useState(location);
   const [ ranGeo, setRanGeo ] = useState(location);
   const [ mapInstance, setMapInstance ] = useState();
-  const [ markerInstance, setMarkerInstance ] = useState();
+  const [ circleInstance, setCircleInstance ] = useState();
   const [ lastPannedLocation, setLastPannedLocation ] = useState(location);
-  const [ autocomplete, setAutocomplete ] = useState();
   const mapContainer = useRef();
-  const textField = useRef();
 
   useEffect(() => {
     // When initialization is complete, hide the spinner.
-    if (!initialized && chosenLocation && mapInstance && markerInstance && autocomplete) {
+    if (!initialized && chosenLocation && mapInstance && circleInstance) {
       setInitialized(true);
     }
-  }, [initialized, mapInstance, markerInstance, chosenLocation, autocomplete]);
+  }, [initialized, mapInstance, circleInstance, chosenLocation]);
 
   useEffect(() => {
     // One time only - import Google Maps code.
@@ -139,72 +173,47 @@ function LocationView({ onAccept, onRevert }) {
   }, [mapInstance, google, chosenLocation, mapContainer]);
 
   useEffect(() => {
-    // Construct the place marker.
-    if (!markerInstance && mapInstance && google) {
-      setMarkerInstance(new google.maps.Marker({
+    // Construct the circle.
+    if (!circleInstance && mapInstance && google) {
+      setCircleInstance(new google.maps.Circle({
         map: mapInstance,
-        icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+        strokeColor: "#ff0000",
+        strokeOpacity: 0.66,
+        strokeWeight: 0.5,
+        fillColor: "#ff0000",
+        fillOpacity: 0.125,
+        radius: radiusMiles * METERS_IN_A_MILE,
         visible: false
       }));
     }
-  }, [markerInstance, mapInstance, google]);
+  }, [circleInstance, mapInstance, google]);
 
   useEffect(() => {
     // Pan map to chosen location.
     if (mapInstance && chosenLocation && !locationsEqual(chosenLocation, lastPannedLocation)) {
-      mapInstance.panTo(locationUsToGoogle(chosenLocation))
+      const googleLocation = locationUsToGoogle(chosenLocation);
+      mapInstance.panTo(googleLocation);
       setLastPannedLocation(chosenLocation);
     }
   }, [mapInstance, chosenLocation, lastPannedLocation]); 
 
   useEffect(() => {
-    // Place marker at chosen location.
-    if (markerInstance && chosenLocation) {
+    // Place circle at chosen location.
+    if (circleInstance && chosenLocation) {
       const googleLocation = locationUsToGoogle(chosenLocation);
       if (googleLocation) {
-        if (!locationsEqual(chosenLocation, locationGoogleToUs(markerInstance.position))) {
-          markerInstance.setPosition(googleLocation);
-          markerInstance.setVisible(true);
-        }
+        circleInstance.setCenter(googleLocation);
+        circleInstance.setVisible(true);
+        mapInstance.fitBounds(circleInstance.getBounds());
       }
       else {
-        markerInstance.setVisible(false);
+        circleInstance.setVisible(false);
       }
     }
-  }, [markerInstance, chosenLocation]); 
+  }, [circleInstance, chosenLocation]); 
 
-  useEffect(() => {
-    if (!autocomplete && google && textField.current) {
-
-      const ac = new google.maps.places.Autocomplete(textField.current, {
-        fields: ["address_components", "formatted_address", "geometry", "place_id"]
-        //types: ["street_address", "premise"]
-      });
-      setAutocomplete(ac);
-
-      const acListener = google.maps.event.addListener(ac, "place_changed", function() {
-        var place = ac.getPlace();
-        if (place.place_id) {   // getPlace sometimes returns a void place.
-          pickAutocompletedPlace(place);
-        }
-      });
-
-      /***
-      return () => {
-        google.maps.event.removeListener(acListener);
-        google.maps.event.clearInstanceListeners(ac);
-      };
-      ***/
-    }
-  }, [autocomplete, google, textField]);
-
-  function pickAutocompletedPlace(place) {
-    const { formatted_address: description, geometry: { location: latLng } } = place;
-    setChosenLocation(Object.assign(locationGoogleToUs(latLng), { description }));
-  }
-
-  function onAccept(newLocation) {
-    setLocation(newLocation);
+  function onAccept() {
+    setLocation(chosenLocation);
     navigate("/");
   }
 
@@ -213,10 +222,27 @@ function LocationView({ onAccept, onRevert }) {
     setChosenLocation(location);
   }
 
+  function onRadiusSliderChange(e) {
+    const { target: { value } } = e;
+    setRadiusMiles(value);
+    if (circleInstance) {
+      circleInstance.setRadius(value * METERS_IN_A_MILE);
+      if (chosenLocation) {
+        const googleLocation = locationUsToGoogle(chosenLocation);
+        circleInstance.setCenter(googleLocation);
+        mapInstance.fitBounds(circleInstance.getBounds());
+      }
+    }
+  }
+
+  function onPlaceChange(newLocation) {
+    setChosenLocation(newLocation);
+  }
+
   return (
     <section>
       { picking ? (
-        <h2>Pick a new location</h2>
+        <h2>Pick a {location ? "new " : ""}area to stalk in</h2>
       ) : (
         <h2>
           You're stalking {inOrAt(location)} {formatLocation(location)}
@@ -225,19 +251,24 @@ function LocationView({ onAccept, onRevert }) {
       )}
       { picking ? (
         <div className="placeInput">
-          <input ref={textField} placeholder="Start typing a place name..."/>
+          <AutocompleteTextInput google={google} onChange={onPlaceChange}/>
         </div>
       ) : null }
-      <div ref={mapContainer} style={{ height: 300 }}></div>
+      <div ref={mapContainer} style={{ height: 400 }}></div>
       <div>{ initialized ? null : <CircularProgress/> }</div>
       { picking ? (
-        <div className="flow-menu text-center">
-          { chosenLocation && chosenLocation.latitude != null ? (
-            <Button variant="outlined" onClick={onAccept}>Stalk here.</Button>
-          ) : null }
-          { location ? (
-            <Button variant="outlined" color="secondary" onClick={onRevert}>On second thought...</Button>
-          ) : null }
+        <div className="">
+          <Slider value={radiusMiles} aria-label="Radius in miles"
+              valueLabelDisplay="auto" shiftStep={5} step={1} min={1} max={110} 
+              onChange={onRadiusSliderChange} />
+          <div className="flow-menu text-center">
+            { chosenLocation && chosenLocation.latitude != null ? (
+              <Button variant="outlined" onClick={onAccept}>Stalk here.</Button>
+            ) : null }
+            { location ? (
+              <Button variant="outlined" color="secondary" onClick={onRevert}>Go back to the previous area</Button>
+            ) : null }
+          </div>
         </div>
       ) : null }
       { !picking && location ? (
@@ -249,4 +280,4 @@ function LocationView({ onAccept, onRevert }) {
   )
 }
 
-export default LocationView;
+export default LocationPicker;

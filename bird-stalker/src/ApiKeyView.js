@@ -22,7 +22,7 @@ function WelcomeView() {
         <span className="logo"><a href="https://ebird.org"><b>eBird</b></a></span> account,
         and you must provide Bird Stalker with your eBird API key.
       </p>
-      <p>
+      <p className="text-center">
         <a href={API_KEYGEN_URL} target="_new">
           <Button type="button" variant="outlined">
             CLICK HERE
@@ -73,7 +73,7 @@ function ApiKeyView() {
   return (
     <section>
       { showWelcome ? <WelcomeView/> : null }
-      <form className={showWelcome ? "" : "text-center"} onSubmit={onFormSubmit}>
+      <form className="text-center" onSubmit={onFormSubmit}>
         <FormControl>
           <TextField 
               defaultValue={apiKey}

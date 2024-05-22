@@ -15,11 +15,12 @@ div.main {
 }
 
 h1 {
-  padding: 2vh 1vh;
+  padding: 1vh;
   font-size: 3em;
   font-weight: 600;
   color: #d6a9ca;
   text-align: center;
+  margin: 0;
 }
 
 section h2 {

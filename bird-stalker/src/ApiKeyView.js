@@ -11,26 +11,28 @@ const API_KEYGEN_URL = "https://ebird.org/api/keygen";
 
 function WelcomeView() {
   return (
-    <>
+    <div style={{ fontSize: "1.1em" }}>
       <h1>Welcome!</h1>
-      <p>
+      <p style={{ border: "solid 1px orange", padding: 16 }}>
         Use <span className="logo">Bird Stalker</span> to track down bird species in your area,
         based on sightings reported to <span className="logo"><a href="https://ebird.org"><b>eBird</b></a></span>.
       </p>
-      <p>
-        To get started, you must have an{" "}
-        <span className="logo"><a href="https://ebird.org"><b>eBird</b></a></span> account,
-        and you must provide Bird Stalker with your eBird API key.
-      </p>
-      <p className="text-center">
-        <a href={API_KEYGEN_URL} target="_new">
-          <Button type="button" variant="outlined">
-            CLICK HERE
-          </Button>
-        </a>
-        {" "}to log in to <span className="logo">eBird</span> and get your API key.
-      </p>
-    </>
+      <div style={{ padding: "0px 16px" }}> 
+        <p>
+          To get started, you must have an{" "}
+          <span className="logo"><a href="https://ebird.org"><b>eBird</b></a></span> account,
+          and you must provide Bird Stalker with your eBird API key.
+        </p>
+        <p className="text-center">
+          <a href={API_KEYGEN_URL} target="_new">
+            <Button type="button" variant="outlined">
+              CLICK HERE
+            </Button>
+          </a>
+          {" "}to log in to <span className="logo">eBird</span> and get your API key.
+        </p>
+      </div>
+    </div>
   )
 }
 

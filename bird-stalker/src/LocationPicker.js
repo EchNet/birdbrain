@@ -15,14 +15,20 @@ const METERS_IN_A_MILE = 1609.34;
 // Format a location dictionary.
 //
 function formatLocation(location) {
+  const parts = [];
   if (location.description) {
-    return location.description;
+    parts.push(location.preposition || "around");
+    parts.push(location.description);
   }
-  return `latitude ${location.latitude}, longitude ${location.longitude}`;
-}
-
-function inOrAt(location) {
-  return location.description ? "in" : "at";
+  else if (location.latitude !== undefined) {
+    parts.push("around");
+    parts.push(`latitude ${location.latitude},`);
+    parts.push(`longitude ${location.longitude}`);
+  }
+  else {
+    parts.push("some unknown area");
+  }
+  return parts.join(" ");
 }
 
 
@@ -53,25 +59,6 @@ function locationsEqual(l1, l2){
   return l1 != null && l2 != null && l1.latitude === l2.latitude && l1.longitude === l2.longitude;
 }
 
-
-function describePosition({ latitude, longitude }) {
-  return new Promise((resolve, reject) => {
-    googleApiConnector.reverseGeocode(latitude, longitude)
-      .then((geocoding) => {
-        if (geocoding) {
-          resolve(geocoding.formatted_address);
-        }
-        else {
-          reject("There's nothing there.");
-        }
-      })
-      .catch((error) => {
-        reject(error);
-      })
-    }
-  );
-}
-
 function getCurrentLocation() {
   return new Promise((resolve, reject) => {
     geoConnector.getCurrentPosition()
@@ -89,6 +76,53 @@ function getCurrentLocation() {
   );
 }
 
+function describePosition({ latitude, longitude }) {
+  return new Promise((resolve, reject) => {
+    googleApiConnector.reverseGeocode(latitude, longitude)
+      .then((geocoding) => {
+        if (geocoding) {
+          resolve(geocoding);
+        }
+        else {
+          reject("There's nothing there.");
+        }
+      })
+      .catch((error) => {
+        reject(error);
+      })
+    }
+  );
+}
+
+function takeDescriptionFromGeocoding(geocoding, location) {
+  location.description = geocoding.name || geocoding.formatted_address;
+
+  const acomps = geocoding.address_components;
+  if (acomps?.length) {
+    const comps = {};
+    for (var i = 0; i < acomps.length; ++i) {
+      comps[acomps[i].types[0]] = acomps[i];
+    }
+    [ ["locality", "around"],
+      ["administrative_area_level_2", "in"],
+      ["administrative_area_level_3"] ].forEach((ele) => {
+      const [ type, preposition ] = ele;
+      if (comps[type]) {
+        if (!location.description) location.description = comps[type].long_name;
+        if (!location.preposition) location.preposition = "around";
+      }
+    });
+  }
+}
+
+function addDescriptionToLocation(location) {
+  return new Promise((resolve, reject) => {
+    describePosition(location)
+      .then((geocoding) => takeDescriptionFromGeocoding(geocoding, location))
+      .finally(() => resolve(location));
+  });
+}
+
 
 function AutocompleteTextInput({ google, onChange }) {
   const [ autocomplete, setAutocomplete ] = useState();
@@ -97,21 +131,22 @@ function AutocompleteTextInput({ google, onChange }) {
   useEffect(() => {
     if (!autocomplete && google && textField.current) {
 
-      const ac = new google.maps.places.Autocomplete(textField.current, {
-        fields: ["address_components", "formatted_address", "geometry"]
-      });
+      const ac = new google.maps.places.Autocomplete(textField.current, {});
       setAutocomplete(ac);
 
-      const acListener = google.maps.event.addListener(ac, "place_changed", () => {
-        pickAutocompletedPlace(ac.getPlace());
+      google.maps.event.addListener(ac, "place_changed", () => {
+        pickPlace(ac.getPlace());
       });
     }
   }, [autocomplete, google, textField]);
 
-  function pickAutocompletedPlace(place) {
-    const { formatted_address: description, geometry: { location: latLng } } = place;
-    onChange(Object.assign(locationGoogleToUs(latLng), { description }));
+  function pickPlace(place) {
+    const { geometry: { location: latLng } } = place;
+    const location = locationGoogleToUs(latLng);
+    takeDescriptionFromGeocoding(place, location);
+    onChange(location);
   }
+
   return (
     <input ref={textField} placeholder="Start typing a place name..."/>
   )
@@ -153,7 +188,9 @@ function LocationPicker({ onAccept, onRevert }) {
     // If there is no location already chosen, obtain one through geodetection.
     if (!chosenLocation && !ranGeo) {
       setRanGeo(true);
-      getCurrentLocation().then(setChosenLocation);
+      getCurrentLocation().then((location) => {
+        addDescriptionToLocation(location).then(setChosenLocation);
+      });
     }
   }, [ chosenLocation, ranGeo ]);
 
@@ -166,7 +203,7 @@ function LocationPicker({ onAccept, onRevert }) {
         gestureHandling: "greedy",
         zoomControl: true,
         zoom: 9,
-        controlSize: 25
+        controlSize: 24
       }));
       setLastPannedLocation(chosenLocation);
     }
@@ -203,6 +240,7 @@ function LocationPicker({ onAccept, onRevert }) {
       const googleLocation = locationUsToGoogle(chosenLocation);
       if (googleLocation) {
         circleInstance.setCenter(googleLocation);
+        circleInstance.setRadius(radiusMiles * METERS_IN_A_MILE);
         circleInstance.setVisible(true);
         mapInstance.fitBounds(circleInstance.getBounds());
       }
@@ -210,7 +248,7 @@ function LocationPicker({ onAccept, onRevert }) {
         circleInstance.setVisible(false);
       }
     }
-  }, [circleInstance, chosenLocation]); 
+  }, [circleInstance, chosenLocation, radiusMiles]); 
 
   function onAccept() {
     setLocation(chosenLocation);
@@ -222,60 +260,89 @@ function LocationPicker({ onAccept, onRevert }) {
     setChosenLocation(location);
   }
 
-  function onRadiusSliderChange(e) {
-    const { target: { value } } = e;
-    setRadiusMiles(value);
-    if (circleInstance) {
-      circleInstance.setRadius(value * METERS_IN_A_MILE);
-      if (chosenLocation) {
-        const googleLocation = locationUsToGoogle(chosenLocation);
-        circleInstance.setCenter(googleLocation);
-        mapInstance.fitBounds(circleInstance.getBounds());
-      }
-    }
-  }
-
   function onPlaceChange(newLocation) {
     setChosenLocation(newLocation);
   }
 
-  return (
-    <section>
-      { picking ? (
-        <h2>Pick a {location ? "new " : ""}area to stalk in</h2>
-      ) : (
-        <h2>
-          You're stalking {inOrAt(location)} {formatLocation(location)}
-          {" "}<Button onClick={() => setPicking(true)}>Change</Button>
-        </h2>
-      )}
-      { picking ? (
+  function WaitSpinner() {
+    return (
+      <div className="text-align" style={{ margin: "20px auto", width: 150 }}>CircularProgress/> }</div>
+    )
+  }
+
+  function renderLocationPickingHeader() {
+    return (
+      <>
+        <h2>Pick a{location ? " new" : "n"} area to stalk in</h2>
+        { chosenLocation ? (
+          <p><b>Showing:</b> {formatLocation(chosenLocation)}</p>
+        ) : null }
         <div className="placeInput">
           <AutocompleteTextInput google={google} onChange={onPlaceChange}/>
         </div>
-      ) : null }
-      <div ref={mapContainer} style={{ height: 400 }}></div>
-      <div>{ initialized ? null : <CircularProgress/> }</div>
-      { picking ? (
-        <div className="">
-          <Slider value={radiusMiles} aria-label="Radius in miles"
-              valueLabelDisplay="auto" shiftStep={5} step={1} min={1} max={110} 
-              onChange={onRadiusSliderChange} />
-          <div className="flow-menu text-center">
-            { chosenLocation && chosenLocation.latitude != null ? (
-              <Button variant="outlined" onClick={onAccept}>Stalk here.</Button>
-            ) : null }
-            { location ? (
-              <Button variant="outlined" color="secondary" onClick={onRevert}>Go back to the previous area</Button>
-            ) : null }
-          </div>
-        </div>
-      ) : null }
-      { !picking && location ? (
+      </>
+    )
+  }
+
+  function renderLocationAtRestHeader() {
+    return (
+      <h2>
+        You're stalking {formatLocation(location)}
+        {" "}<Button onClick={() => setPicking(true)}>Change</Button>
+      </h2>
+    )
+  }
+
+  function renderLocationPickingFooter() {
+
+    function onRadiusSliderChange(event, value) {
+      setRadiusMiles(value);
+    }
+
+    function getAriaValueText() {
+      return getValueLabel(radiusMiles);
+    }
+
+    function getValueLabel(radiusMiles) {
+      return `${radiusMiles} mile${radiusMiles !== 1 ? "s" : ""}`;
+    }
+
+    return (
+      <div className="">
+        <Slider value={radiusMiles} aria-label="Radius in miles" getAriaValueText={getAriaValueText}
+            valueLabelDisplay="auto" valueLabelFormat={getValueLabel} step={1} min={1} max={110} 
+            onChange={onRadiusSliderChange} />
         <div className="flow-menu text-center">
-          <Button variant="outlined" color="secondary" onClick={() => navigate("/")}>Good. Let's stalk</Button>
+          { chosenLocation && chosenLocation.latitude != null ? (
+            <Button variant="outlined" onClick={onAccept}>Stalk here</Button>
+          ) : null }
+          { location ? (
+            <Button variant="outlined" color="secondary" onClick={onRevert}>Cancel</Button>
+          ) : null }
         </div>
-      ) : null }
+      </div>
+    )
+  }
+
+  function renderLocationAtRestFooter() {
+    return location ? (
+      <div className="flow-menu text-center">
+        <Button variant="outlined" color="secondary" onClick={() => navigate("/")}>Good. Let's stalk</Button>
+      </div>
+    ) : null;
+  }
+
+  return (
+    <section>
+      { initialized ? (
+        <>
+          { picking ? renderLocationPickingHeader() : renderLocationAtRestHeader() }
+
+          <div ref={mapContainer} style={mapInstance ? { height: 400 } : {}}></div>
+
+          { picking ? renderLocationPickingFooter() : renderLocationAtRestFooter() }
+        </>
+      ) : <WaitSpinner/> }
     </section>
   )
 }

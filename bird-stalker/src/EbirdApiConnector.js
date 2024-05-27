@@ -1,9 +1,28 @@
+import React, { createContext, useContext } from 'react';
+import AppContext from './AppContext';
 
-function EbirdApiConnector(config) {
+const EbirdApiContext = createContext();
 
-  var { apiKey, maxDistanceMiles } = config;
+const BASE_URL = "https://api.ebird.org/v2/";
 
-  const BASE_URL = "https://api.ebird.org/v2/";
+const KILOMETERS_PER_MILE = 1.60934;
+
+
+export const EbirdApiProvider = ({ children }) => {
+
+  const { apiKey, location } = useContext(AppContext);
+
+  const { radiusMiles } = location || {};
+
+  const ready = (apiKey != null) && (location.latitude != null || location.regionCode != null);
+
+  function queryString(queryParams=[]) {
+    return queryParams.map((pair) => pair.join("=")).join("&");
+  }
+
+  function apiUrl(path, queryParams) {
+    return `${BASE_URL}${path}?${queryString(queryParams)}`;
+  }
 
   function apiPromise(url) {
     return new Promise((resolve, reject) => {
@@ -32,22 +51,69 @@ function EbirdApiConnector(config) {
     });
   }
 
-  function getRecentNearbyObservations(latitude, longitude) {
-    const PATH = "data/obs/geo/recent";
-    const url = `${BASE_URL}${PATH}?lat=${latitude}&lng=${longitude}`;
-    return apiPromise(url);
+  function getObservations(params = {}) {
+    //
+    // Context:
+    //   regionCode = include observations within ebird region code only
+    //   latitude, longitude = include observations close to given coordinates only
+    //
+    const { regionCode, latitude, longitude, radiusMiles } = location;
+
+    //
+    // Params:
+    //   speciesCode = include observations of ebird species code only
+    //   notable = (bool) include notable observations only
+    //   nearest = (bool) sort by nearest observation to coordinates
+    //
+    const { nearest, notable, speciesCode } = params;
+
+    let path = "data/obs";
+
+    let queryParams = [
+      [ "back", 6 ],
+      [ "detail", "full" ]
+    ];
+
+    if (regionCode) {
+      path += `/${regionCode}`;
+    }
+    else {
+      if (nearest && speciesCode) {
+        path += "/nearest";
+      }
+      path += "/geo";
+
+      const radiusKilometers = (radiusMiles || 10) * KILOMETERS_PER_MILE;
+      queryParams = queryParams.concat([
+        [ "lat", latitude ],
+        [ "lng", longitude ],
+        [ "dist", radiusKilometers ]
+      ]);
+    }
+
+    path += "/recent";
+
+    if (speciesCode) {
+      path += `/${speciesCode}`;
+    }
+    else if (notable) {
+      path += "/notable";
+    }
+
+alert(queryParams.toString());
+
+    return apiPromise(apiUrl(path, queryParams));
   }
 
-  function getRecentNearbyObservationsOfSpecies(speciesCode, latitude, longitude) {
-    const path = `data/obs/geo/recent/${speciesCode}`;
-    const url = `${BASE_URL}${path}?lat=${latitude}&lng=${longitude}`;
-    return apiPromise(url);
-  }
-
-  return { 
-    getRecentNearbyObservations,
-    getRecentNearbyObservationsOfSpecies,
-  }
+  return (
+    <EbirdApiContext.Provider value={{
+        apiKey,
+        getObservations,
+        ready
+    }}>
+      {children}
+    </EbirdApiContext.Provider>
+  );
 }
 
-export default EbirdApiConnector;
+export default EbirdApiContext;

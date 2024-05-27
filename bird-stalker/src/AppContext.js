@@ -3,35 +3,15 @@ import { storageConnector } from './StorageConnector';
 
 const AppContext = createContext();
 
-export const DEFAULT_RADIUS_MILES = 22;
+const TARGETED = 1;
+const EXCLUDED = 2;
 
-function listToHash(list) {
-  const hash = {};
-  if (list) {
-    for (var i = 0; i < list.length; ++i) {
-      hash[list[i]] = 1;
-    }
-  }
-  return hash;
-}
-
-function hashToList(hash) {
-  const list = [];
-  if (hash) {
-    for (var key in hash) {
-      list.push(key);
-    }
-  }
-  return list;
-}
-
-export const AppProvider = ({ children }) => {
+export function AppProvider({ children }) {
 
   const [ initialized, setInitialized ] = useState(false);
   const [ apiKey, setApiKey ] = useState(null);
   const [ location, setLocation ] = useState(null);
-  const [ excludedSpecies, setExcludedSpecies ] = useState([]);
-  const [ radiusMiles, setRadiusMiles ] = useState(DEFAULT_RADIUS_MILES);
+  const [ species, setSpecies ] = useState([]);
   const [ menuOpen, setMenuOpen ] = useState(false);
 
   useEffect(() => {
@@ -39,11 +19,16 @@ export const AppProvider = ({ children }) => {
       .then(savedState => {
         setInitialized(true);
         if (savedState) {
-          const { apiKey, location, excludedSpecies, radiusMiles } = savedState;
-          if (apiKey) setApiKey(apiKey);
-          if (location) setLocation(location);
-          if (excludedSpecies) setExcludedSpecies(listToHash(excludedSpecies));
-          if (radiusMiles) setRadiusMiles(radiusMiles);
+          const { apiKey, location, species } = savedState;
+          if (apiKey) {
+            setApiKey(apiKey);
+          }
+          if (location) {
+            setLocation(location);
+          }
+          if (species) {
+            setSpecies(species);
+          }
         }
       });
   }, []);
@@ -52,38 +37,56 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     if (initialized) {
       storageConnector.saveState({
-        apiKey, location, excludedSpecies: hashToList(excludedSpecies), radiusMiles
+        apiKey,
+        location,
+        species,
       });
     }
-  }, [ initialized, apiKey, location, excludedSpecies, radiusMiles ]);
+  }, [ initialized, apiKey, location, species ]);
 
-  const addExcludedSpecies = (speciesCode) => {
-    if (!excludedSpecies[speciesCode]) {
-      const newExcludedSpecies = Object.assign({}, excludedSpecies, { [speciesCode]:1 });
-      setExcludedSpecies(newExcludedSpecies);
-    }
-  };
+  function speciesIsTargeted(speciesCode) {
+    return species[speciesCode] === TARGETED;
+  }
 
-  const removeExcludedSpecies = (speciesCode) => {
-    if (excludedSpecies[speciesCode]) {
-      const newExcludedSpecies = Object.assign({}, excludedSpecies);
-      delete newExcludedSpecies[speciesCode];
-      setExcludedSpecies(newExcludedSpecies);
+  function speciesIsExcluded(speciesCode) {
+    return species[speciesCode] === EXCLUDED;
+  }
+
+  function addSpeciesToList(speciesCode, listId) {
+    if (species[speciesCode] !== listId) {
+      setSpecies(Object.assign({}, species, { [speciesCode]: listId }));
     }
-  };
+  }
+
+  function addSpeciesToTargetedList(speciesCode) {
+    addSpeciesToList(speciesCode, TARGETED);
+  }
+
+  function addSpeciesToExcludedList(speciesCode) {
+    addSpeciesToList(speciesCode, EXCLUDED);
+  }
+
+  function removeSpeciesFromItsList(speciesCode) {
+    if (species[speciesCode]) {
+      const newSpecies = Object.assign({}, species);
+      delete newSpecies[speciesCode];
+      setSpecies(newSpecies);
+    }
+  }
 
   return (
     <AppContext.Provider
         value={{ 
-                 initialized,
-                 apiKey, setApiKey,
-                 location, setLocation,
-                 excludedSpecies, addExcludedSpecies, removeExcludedSpecies,
-                 radiusMiles, setRadiusMiles,
-                 menuOpen, setMenuOpen }}>
+               initialized,
+               apiKey, setApiKey,
+               location, setLocation,
+               speciesIsTargeted, speciesIsExcluded,
+               addSpeciesToTargetedList, addSpeciesToExcludedList,
+               removeSpeciesFromItsList,
+               menuOpen, setMenuOpen }}>
       {children}
     </AppContext.Provider>
-  );
-};
+  )
+}
 
 export default AppContext;

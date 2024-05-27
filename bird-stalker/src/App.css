@@ -107,6 +107,12 @@ table {
   margin: 0.6em;
 }
 
+.spinner-container {
+  text-align: center;
+  margin: 20px auto;
+  width: 150px;
+}
+
 .placeInput {
   margin-bottom: 2px;
 }

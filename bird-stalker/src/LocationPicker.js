@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import Slider from '@mui/material/Slider';
-import CircularProgress from '@mui/material/CircularProgress';
 import AppContext from './AppContext';
-import { geoConnector } from './GeoConnector';
+import Loader from './Loader';
 import GoogleMapsContext from './GoogleMapsContext';
+import { geoConnector } from './GeoConnector';
 import { googleApiConnector } from './GoogleApiConnector';
 
+const DEFAULT_RADIUS_MILES = 10;
 const METERS_IN_A_MILE = 1609.34;
 
 //
@@ -16,18 +17,22 @@ const METERS_IN_A_MILE = 1609.34;
 //
 function formatLocation(location) {
   const parts = [];
-  if (location.description) {
-    parts.push(location.preposition || "around");
-    parts.push(location.description);
-  }
-  else if (location.latitude !== undefined) {
-    parts.push("around");
-    parts.push(`latitude ${location.latitude},`);
-    parts.push(`longitude ${location.longitude}`);
-  }
-  else {
+
+  if (location.latitude == null && location.description == null) {
     parts.push("some unknown area");
   }
+  else {
+   parts.push(location.radiusMiles < 3 ? "near" : `within ${location.radiusMiles} miles of`);
+
+    if (location.description) {
+      parts.push(location.description);
+    }
+    else if (location.latitude != null) {
+      parts.push(`latitude ${location.latitude},`);
+      parts.push(`longitude ${location.longitude}`);
+    }
+  }
+
   return parts.join(" ");
 }
 
@@ -154,10 +159,11 @@ function AutocompleteTextInput({ google, onChange }) {
 
 
 function LocationPicker({ onAccept, onRevert }) {
-  const { location, setLocation, radiusMiles, setRadiusMiles } = useContext(AppContext);
+  const { location, setLocation } = useContext(AppContext);
   const { loadGoogle } = useContext(GoogleMapsContext);
   const navigate = useNavigate();
  
+  const [ radiusMiles, setRadiusMiles ] = useState(location.radiusMiles || DEFAULT_RADIUS_MILES);
   const [ picking, setPicking ] = useState(!location);
   const [ initialized, setInitialized ] = useState(!picking);
   const [ google, setGoogle ] = useState();
@@ -261,13 +267,8 @@ function LocationPicker({ onAccept, onRevert }) {
   }
 
   function onPlaceChange(newLocation) {
+    newLocation.radiusMiles = radiusMiles;
     setChosenLocation(newLocation);
-  }
-
-  function WaitSpinner() {
-    return (
-      <div className="text-align" style={{ margin: "20px auto", width: 150 }}>CircularProgress/> }</div>
-    )
   }
 
   function renderLocationPickingHeader() {
@@ -334,7 +335,7 @@ function LocationPicker({ onAccept, onRevert }) {
 
   return (
     <section>
-      { initialized ? (
+      <Loader initialized={initialized}>
         <>
           { picking ? renderLocationPickingHeader() : renderLocationAtRestHeader() }
 
@@ -342,7 +343,7 @@ function LocationPicker({ onAccept, onRevert }) {
 
           { picking ? renderLocationPickingFooter() : renderLocationAtRestFooter() }
         </>
-      ) : <WaitSpinner/> }
+      </Loader>
     </section>
   )
 }

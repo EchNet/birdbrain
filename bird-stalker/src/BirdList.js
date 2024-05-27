@@ -6,29 +6,44 @@ import AppContext from './AppContext';
 import EbirdApiContext from './EbirdApiConnector';
 import Loader from './Loader';
 
-const FULL_PLATE = 6;
+const FULL_PLATE = 8;
 
 
-function BirdListItem(props) {
-  const { data: { speciesCode, comName } } = props;
+function BirdListItem({ bird, remove }) {
+  const { speciesCode, comName } = bird;
+  const {
+    speciesIsTargeted, addSpeciesToTargetedList, addSpeciesToExcludedList, removeSpeciesFromItsList
+  } = useContext(AppContext);
 
-  const { excludedSpecies, addExcludedSpecies, removeExcludedSpecies } = useContext(AppContext);
+  const targeted = speciesIsTargeted(speciesCode);
+
+  function onAddToStalkList() {
+    addSpeciesToTargetedList(speciesCode);
+  }
+
+  function onAddToNoStalkList() {
+    addSpeciesToExcludedList(speciesCode);
+    remove(bird);
+  }
 
   return (
-    <div className="bird-list-item">
-      <div className="image-container">
-        <img src={`/img/birds/{speciesCode}.png`} width="100%" />
-      </div>
-      <div className="other-stuff">
+    <div style={{ display: "flex", justifyContent: "space-between", padding: 15, background: "white", borderRadius: 12, border: "solid 1px #aaa", marginBottom: 10, filter: "drop-shadow(3px 3px 3px #aaa)"}}>
+      <div style={{ width: "50%" }}>
         <h4>{ comName }</h4>
+        <img src={`/img/birds/{speciesCode}.png`} width="100%" />
+        <p>({ speciesCode })</p>
+      </div>
+      <div style={{ textAlign: "right", width: "40%" }}>
         <p>
-          <Button>Add to stalk list</Button>
+          { targeted ? "TARGET" : "" }
         </p>
         <p>
-          <Button>Add to don't-stalk list</Button>
+          <Button disabled={targeted} onClick={onAddToStalkList} >Add to stalk list</Button>
         </p>
         <p>
-          <Button>See observations in area</Button>
+          <Button onClick={onAddToNoStalkList}>Add to no-stalk list</Button>
+        </p>
+        <p>
           <Link component={RouterLink} to={`/bird/${speciesCode}`}>See observations in area</Link>
         </p>
       </div>
@@ -44,29 +59,28 @@ function BirdList() {
   const { ready: apiReady, getObservations } = useContext(EbirdApiContext);
   const { speciesIsTargeted, speciesIsExcluded } = useContext(AppContext);
 
-  function takeBirds(existingBirds, additionalObs) {
+  async function fillPlate() {
     const birdSet = {};
-    existingBirds.forEach((bird) => birdSet[bird.speciesCode] = 1);
-    const newBirds = existingBirds.slice();
-    additionalObs.forEach((obs) => {
-      if (newBirds.length < FULL_PLATE) {
-        const { comName, speciesCode } = obs;
-        if (!birdSet[speciesCode] && !speciesIsExcluded(speciesCode)) {
-          newBirds.push({ speciesCode, comName });
-          birdSet[speciesCode] = 1;
-        }
+    birds.forEach((bird) => birdSet[bird.speciesCode] = 1);
+    const newBirds = birds.slice();
+    const notables = await getObservations({ notable: true });
+    const recents = await getObservations({ recent: true });
+    const allObs = notables.concat(recents)
+    allObs.forEach((obs) => {
+      const { comName, speciesCode } = obs;
+      if (!birdSet[speciesCode] && speciesIsTargeted(speciesCode)) {
+        newBirds.push({ speciesCode, comName });
+        birdSet[speciesCode] = 1;
       }
     });
-    return newBirds;
-  }
+    allObs.forEach((obs) => {
+      const { comName, speciesCode } = obs;
+      if (newBirds.length < FULL_PLATE && !birdSet[speciesCode] && !speciesIsExcluded(speciesCode)) {
+        newBirds.push({ speciesCode, comName });
+        birdSet[speciesCode] = 1;
+      }
+    });
 
-  async function fillPlate() {
-    const notables = await getObservations({ notable: true });
-    let newBirds = takeBirds(birds, notables);
-    if (newBirds.length < FULL_PLATE) {
-      const recents = await getObservations({ recent: true });
-      newBirds = takeBirds(newBirds, recents);
-    }
     return newBirds;
   }
 
@@ -91,12 +105,19 @@ function BirdList() {
     }
   });
 
+  function removeBird(bird) {
+    const { speciesCode } = bird;
+    const index = birds.findIndex((ele) => ele.speciesCode === speciesCode);
+alert(index);
+    setBirds(birds.slice(0, index).concat(birds.slice(index + 1)));
+  }
+
   return (
     <section>
       <Loader initialized={loaded}>
         { !birds.length && <p>No birds left to stalk here.</p> }
         <ul className="bird-list">
-          { birds.map((b) => <BirdListItem key={b.speciesCode} data={b}/>) }
+          { birds.map((b) => <BirdListItem key={b.speciesCode} bird={b} remove={removeBird}/>) }
         </ul>
       </Loader>
     </section>

@@ -100,8 +100,6 @@ export const EbirdApiProvider = ({ children }) => {
       path += "/notable";
     }
 
-alert(queryParams.toString());
-
     return apiPromise(apiUrl(path, queryParams));
   }
 

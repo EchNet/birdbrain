@@ -311,7 +311,7 @@ function LocationPicker({ onAccept, onRevert }) {
     return (
       <div className="">
         <Slider value={radiusMiles} aria-label="Radius in miles" getAriaValueText={getAriaValueText}
-            valueLabelDisplay="auto" valueLabelFormat={getValueLabel} step={1} min={1} max={110} 
+            valueLabelDisplay="auto" valueLabelFormat={getValueLabel} step={1} min={1} max={50} 
             onChange={onRadiusSliderChange} />
         <div className="flow-menu text-center">
           { chosenLocation && chosenLocation.latitude != null ? (

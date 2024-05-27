@@ -108,7 +108,6 @@ function BirdList() {
   function removeBird(bird) {
     const { speciesCode } = bird;
     const index = birds.findIndex((ele) => ele.speciesCode === speciesCode);
-alert(index);
     setBirds(birds.slice(0, index).concat(birds.slice(index + 1)));
   }
 

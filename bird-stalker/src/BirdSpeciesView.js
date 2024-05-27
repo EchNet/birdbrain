@@ -3,15 +3,16 @@ import { useParams } from 'react-router-dom';
 import Button from '@mui/material/Button';
 import Link from '@mui/material/Link';
 import AppContext from './AppContext';
-import EbirdApiConnector from './EbirdApiConnector';
+import EbirdApiContext from './EbirdApiConnector';
 
-function BirdSpeciesView(props) {
+function BirdSpeciesView() {
   const { speciesCode } = useParams();
-  const { apiKey, location, maxDistanceMiles } = useContext(AppContext);
+  const { apiKey, location } = useContext(AppContext);
   const [ recentObservations, setRecentObservations ] = useState(null);
   const [ historicObservations, setHistoricObservations ] = useState(null);
   const [ waiting, setWaiting ] = useState(true);
   const [ comName, setComName ] = useState("");
+  const { ready: apiReady, getObservations } = useContext(EbirdApiContext);
 
   function processRecentNearbyObservations(observations) {
     var comName = null;
@@ -24,18 +25,25 @@ function BirdSpeciesView(props) {
     setComName(comName);
   }
 
+  async function fillPlate() {
+    try {
+      const obs = await getObservations({ speciesCode });
+      processRecentNearbyObservations(obs);
+    }
+    catch (e) {
+      console.error(e);
+    }
+    finally {
+      setWaiting(false);
+    }
+  }
+
   useEffect(() => {
-    const ebirdApiConnector = EbirdApiConnector({ apiKey, maxDistanceMiles });
-    const { latitude, longitude } = location;
-    ebirdApiConnector.getRecentNearbyObservationsOfSpecies(speciesCode, latitude, longitude)
-      .then(processRecentNearbyObservations)
-      .catch((error) => console.log(error))
-      .finally(() => setWaiting(false));
+    fillPlate();
   }, []);
 
-
-  function ObservationView(props) {
-    const { data: { locName, obsDt, howMany } } = props;
+  function ObservationView({ data }) {
+    const { locName, obsDt, howMany } = data;
     return (
       <p>
         {obsDt} at {locName} ({howMany})
@@ -46,7 +54,7 @@ function BirdSpeciesView(props) {
   return (
     <div className="main">
       <h1>Stalking the {comName}...</h1>
-      <h2>Recent observations near your location...</h2>
+      <h2>Recent observations in your area...</h2>
       <div>
         { !waiting && recentObservations.map((obs) => <ObservationView data={obs} />) }
       </div>
